@@ -1,13 +1,13 @@
-module System where
+module Main where
 
 import Daml.Script
 import Custody
-import Fractional 
+import Fractional
 
 
 -- TEST 1
-test_1 : Script (TokenPoolId)
-test_1 = do
+e2e_test_1 : Script (TokenPoolId)
+e2e_test_1 = do
   -- parties
   carlos <-  allocateParty "Carlos the Collector"
   acme <- allocateParty "Acme Shipping"
@@ -26,15 +26,15 @@ test_1 = do
   picasso <- submit inspector do exerciseCmd picasso IsAuthentic with inspection = True
   picasso <- submit storage do exerciseCmd picasso ReleaseToCustodian with custodian = custodian
 
-  -- tokenise artwork
+  -- tokenize artwork
   pool <- submit custodian do exerciseCmd picasso Tokenise
 
-  (pool, token1) <- submit custodian do exerciseCmd pool MintToken with {buyer=buyer} 
-  (pool, token2)  <- submit custodian do exerciseCmd pool MintToken with {buyer=carlos} 
+  (pool, token1) <- submit custodian do exerciseCmd pool MintToken with {buyer=buyer}
+  (pool, token2)  <- submit custodian do exerciseCmd pool MintToken with {buyer=carlos}
   (pool, token3)  <- submit custodian do exerciseCmd pool MintToken with {buyer=inspector}
 
   -- marketplace transactions
-  submit carlos do exerciseCmd token2 Sell {buyer=buyer} 
-  submit inspector do exerciseCmd token3 Sell {buyer=buyer} 
+  submit carlos do exerciseCmd token2 Sell {buyer=buyer}
+  submit inspector do exerciseCmd token3 Sell {buyer=buyer}
 
   return pool
