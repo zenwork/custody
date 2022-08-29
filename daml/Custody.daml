@@ -1,7 +1,9 @@
 module Custody where
 
+import Shared
+import Fractional
+
 type ArtworkId = ContractId Artwork
-type ArtworkKey = (Party,Text)
 
 -- artwork custody template
 template Artwork
@@ -75,57 +77,13 @@ template Artwork
     choice Tokenise : TokenPoolId
       controller holder
         do 
-          assert (isFractionlised == False)
+          assert (not isFractionlised && state == "in custody" && authentic == Some(True))
           create this with isFractionlised = True
-          create TokenPool with {underlying=this,issuer=holder, balance=100}
-
+          create TokenPool with {artwork=(owner, title), issuer=holder, balance=100, tokens=[]}
 
 newArtwork : (Party, Text) -> Artwork
 newArtwork(p, t) = Artwork with
 {owner = p, title = t, holder = p, state = "in colleciton", authentic = None, inspector = None, isFractionlised=False }
-
-
-type TokenPoolId = ContractId TokenPool
-type TokenId = ContractId Token
-
--- fractionalisation of artwork under custody
-template TokenPool
-  with
-    underlying: Artwork
-    issuer: Party
-    balance: Int
-  where
-    signatory issuer
-    ensure
-      underlying.state == "in custody" && underlying.authentic == Some(True) && balance > 0
-    choice MintToken : (TokenPoolId,TokenId)
-      with
-        buyer: Party
-      controller issuer
-        do
-          assert (balance - 1 > -1)
-          p <- create this with {balance=this.balance -1}
-          t <- create Token with {issuer=issuer, token=this, owner=buyer}
-          return (p,t)
-    
-
- -- tradeable token representing a fraction of an artwork in custody 
-template Token
-  with
-    issuer: Party
-    owner: Party
-    token: TokenPool
-  where
-    signatory issuer
-    observer owner
-    choice Sell : TokenId
-      with
-        buyer: Party
-      controller owner
-        do
-          assert (buyer /= owner)
-          create this with owner=buyer
-
 
 
 

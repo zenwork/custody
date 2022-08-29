@@ -1,0 +1,48 @@
+module Fractional where
+
+import Shared
+
+type TokenPoolId = ContractId TokenPool
+type TokenId = ContractId Token
+
+-- fractionalisation of artwork under custody
+template TokenPool
+  with
+    artwork: ArtworkKey
+    issuer: Party
+    balance: Int
+    tokens:[TokenId]
+  where
+    signatory issuer 
+    ensure
+      balance > 0
+    choice MintToken : (TokenPoolId,TokenId)
+      with
+        buyer: Party
+      controller issuer
+        do
+          assert (balance - 1 > -1)
+          t <- create Token with { issuer = issuer, owner = buyer, id = (artwork._2, 100 - this.balance) }
+          p <- create this with { balance = (this.balance -1), tokens = t :: tokens }
+          return (p,t)
+    
+
+ -- tradeable token representing a fraction of an artwork in custody 
+template Token
+  with
+    issuer: Party
+    owner: Party
+    id: (Text,Int)
+  where
+    signatory issuer
+    observer owner
+    choice Sell : TokenId
+      with
+        buyer: Party
+      controller owner
+        do
+          assert (buyer /= owner)
+          create this with owner=buyer
+
+
+

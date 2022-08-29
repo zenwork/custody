@@ -1,7 +1,9 @@
 module System where
 
 import Daml.Script
-import Custody 
+import Custody
+import Fractional 
+
 
 -- TEST 1
 test_1 : Script (TokenPoolId)

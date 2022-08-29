@@ -1,0 +1,3 @@
+module Shared where
+
+type ArtworkKey = (Party,Text)

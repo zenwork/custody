@@ -16,13 +16,17 @@ Create a marketplace to which artworks can be taken into custody in atraceable w
 1. how to pass a ref to a contract instance rather than record
 1. token references pool at point in the past
 
-
 ## Tasks
 1. add wallet
-1. split into multiple files
-1. add array of pointers to token externalised id/hash (remove pointer back to pool)
 1. figure out how to use keys
 1. figure out the issue with asserts
 1. look at writing proper tests
 1. run with inspector
 1. introduce currency
+1. clean up code
+1. look at multi-party signing
+1. is there better way to have default values or private constructors
+
+
+## Notes
+1. Had to move ensure from construction to creation choice time. Seems like I am weakening the model
