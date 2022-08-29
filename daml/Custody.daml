@@ -1,0 +1,135 @@
+module Custody where
+
+type ArtworkId = ContractId Artwork
+type ArtworkKey = (Party,Text)
+
+-- artwork custody template
+template Artwork
+  with
+    owner : Party
+    holder: Party
+    inspector : Optional(Party)
+    title : Text
+    state : Text
+    authentic : Optional(Bool)
+    isFractionlised : Bool
+  where
+    signatory owner
+    observer holder
+    observer inspector
+
+    key (owner, title) : ArtworkKey
+    maintainer key._1
+    
+    agreement
+      "physical artwork custody chain"
+
+    choice ReleaseToShipper : ArtworkId
+      with
+        shipper: Party
+      controller owner 
+        do
+          create this with
+            holder = shipper
+            state = "in transit" 
+
+    choice ReleaseToStorage : ArtworkId
+      with
+        storage: Party
+      controller holder 
+        do
+          assert(state == "in transit")
+          create this with
+            holder = storage
+            state = "in storage" 
+    
+    choice ReleaseToCustodian : ArtworkId
+      with
+        custodian: Party
+      controller holder 
+        do
+          assert(state == "in storage")
+          assert(authentic == Some True)
+          create this with
+            holder = custodian
+            state = "in custody" 
+    
+    choice SetInspector : ArtworkId
+      with
+        expert: Party
+      controller holder 
+        do
+          assert(state == "in storage")
+          create this with
+            inspector = Some expert
+
+    choice IsAuthentic : ArtworkId
+      with
+        inspection: Bool
+      controller inspector 
+        do
+          assert(state == "in storage")
+          create this with
+            authentic = Some inspection
+    
+    choice Tokenise : TokenPoolId
+      controller holder
+        do 
+          assert (isFractionlised == False)
+          create this with isFractionlised = True
+          create TokenPool with {underlying=this,issuer=holder, balance=100}
+
+
+newArtwork : (Party, Text) -> Artwork
+newArtwork(p, t) = Artwork with
+{owner = p, title = t, holder = p, state = "in colleciton", authentic = None, inspector = None, isFractionlised=False }
+
+
+type TokenPoolId = ContractId TokenPool
+type TokenId = ContractId Token
+
+-- fractionalisation of artwork under custody
+template TokenPool
+  with
+    underlying: Artwork
+    issuer: Party
+    balance: Int
+  where
+    signatory issuer
+    ensure
+      underlying.state == "in custody" && underlying.authentic == Some(True) && balance > 0
+    choice MintToken : (TokenPoolId,TokenId)
+      with
+        buyer: Party
+      controller issuer
+        do
+          assert (balance - 1 > -1)
+          p <- create this with {balance=this.balance -1}
+          t <- create Token with {issuer=issuer, token=this, owner=buyer}
+          return (p,t)
+    
+
+ -- tradeable token representing a fraction of an artwork in custody 
+template Token
+  with
+    issuer: Party
+    owner: Party
+    token: TokenPool
+  where
+    signatory issuer
+    observer owner
+    choice Sell : TokenId
+      with
+        buyer: Party
+      controller owner
+        do
+          assert (buyer /= owner)
+          create this with owner=buyer
+
+
+
+
+
+
+
+

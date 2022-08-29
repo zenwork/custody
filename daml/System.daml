@@ -1,0 +1,38 @@
+module System where
+
+import Daml.Script
+import Custody 
+
+-- TEST 1
+test_1 : Script (TokenPoolId)
+test_1 = do
+  -- parties
+  carlos <-  allocateParty "Carlos the Collector"
+  acme <- allocateParty "Acme Shipping"
+  storage <- allocateParty "Big Box Storage"
+  custodian <- allocateParty "Digital Marketplace"
+  inspector <- allocateParty "Professor Smith"
+  buyer <- allocateParty "Ian Investor"
+
+  -- create artwork
+  picasso <- submit carlos do createCmd (newArtwork (carlos, "Les Femmes d'Alger"))
+
+  -- bring artwork into custody
+  picasso <- submit carlos do exerciseCmd picasso ReleaseToShipper with shipper = acme
+  picasso <- submit acme do exerciseCmd picasso ReleaseToStorage with storage = storage
+  picasso <- submit storage do exerciseCmd picasso SetInspector with expert = inspector
+  picasso <- submit inspector do exerciseCmd picasso IsAuthentic with inspection = True
+  picasso <- submit storage do exerciseCmd picasso ReleaseToCustodian with custodian = custodian
+
+  -- tokenise artwork
+  pool <- submit custodian do exerciseCmd picasso Tokenise
+
+  (pool, token1) <- submit custodian do exerciseCmd pool MintToken with {buyer=buyer} 
+  (pool, token2)  <- submit custodian do exerciseCmd pool MintToken with {buyer=carlos} 
+  (pool, token3)  <- submit custodian do exerciseCmd pool MintToken with {buyer=inspector}
+
+  -- marketplace transactions
+  submit carlos do exerciseCmd token2 Sell {buyer=buyer} 
+  submit inspector do exerciseCmd token3 Sell {buyer=buyer} 
+
+  return pool
