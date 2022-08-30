@@ -15,12 +15,12 @@ e2e_test_1 = do
   storage <- allocateParty "Big Box Storage"
   custodian <- allocateParty "Digital Marketplace"
   inspector <- allocateParty "Professor Smith"
-  buyer <- allocateParty "Ian Investor"
+  ian <- allocateParty "Ian Investor"
 
   -- wallets
-  wallet1 <- submit buyer do createCmd (walletFor (buyer)) 
-  wallet2 <- submit carlos do createCmd (walletFor (carlos)) 
-  wallet3 <- submit inspector do createCmd (walletFor (inspector)) 
+  ianWallet <- submit ian do createCmd (walletFor (ian)) 
+  carlosWallet <- submit carlos do createCmd (walletFor (carlos)) 
+  inspectorWallet <- submit inspector do createCmd (walletFor (inspector)) 
 
   -- create artwork
   picasso <- submit carlos do createCmd (artworkFor (carlos, "Les Femmes d'Alger"))
@@ -35,18 +35,19 @@ e2e_test_1 = do
   -- tokenize artwork
   pool <- submit custodian do exerciseCmd picasso Tokenise
 
-  (pool, token1, tokenId1) <- submit custodian do exerciseCmd pool MintToken with {buyer = buyer}
-  wallet1 <- submit buyer do exerciseCmd wallet1 Put with {token = tokenId1}
+  (pool, token1) <- submit custodian do exerciseCmd pool MintToken with {buyer = ian}
+  ianWallet <- submit ian do exerciseCmd ianWallet Put with {token = token1}
 
-  (pool, token2, tokenId2)  <- submit custodian do exerciseCmd pool MintToken with {buyer = carlos}
-  wallet2 <- submit carlos do exerciseCmd wallet2 Put with {token = tokenId2}
+  (pool, token2)  <- submit custodian do exerciseCmd pool MintToken with {buyer = carlos}
+  carlosWallet <- submit carlos do exerciseCmd carlosWallet Put with {token = token2}
 
-  (pool, token3, tokenId3)  <- submit custodian do exerciseCmd pool MintToken with {buyer = inspector}
-  wallet3 <- submit inspector do exerciseCmd wallet3 Put with {token = tokenId3}
+  (pool, token3)  <- submit custodian do exerciseCmd pool MintToken with {buyer = inspector}
+  inspectorWallet <- submit inspector do exerciseCmd inspectorWallet Put with {token = token3}
   
   
   -- marketplace transactions
-  -- wallet2 <-  submit carlos do exerciseCmd wallet2 Transfer {token=token2, reciever=wallet3, payment=2}
-  -- submit inspector do exerciseCmd token3 Sell {buyer=buyer}
+  trx <-  submit carlos do createCmd WalletTransfer {senderParty = carlos, senderWallet = (carlos, "abc-123"), counterparty = ian, token = (token2.issuer, token2.id, token2.artworkKey), amount = 10}
+  
+  -- trx <- submit inspector do exerciseCmd trx AcceptTransfer
 
   return pool

@@ -8,7 +8,7 @@ type TokenId = ContractId Token
 -- fractionalisation of artwork under custody
 template TokenPool
   with
-    artwork: ArtworkKey
+    artworkKey: ArtworkKey
     issuer: Party
     balance: Int
     tokens:[TokenId]
@@ -16,16 +16,17 @@ template TokenPool
     signatory issuer 
     ensure
       balance > 0
-    choice MintToken : (TokenPoolId, TokenId, ArtworkTokenKey)
+    choice MintToken : (TokenPoolId, Token)
       with
         buyer: Party
       controller issuer
         do
           assert (balance - 1 > -1)
-          let id =(artwork._2, 100 - this.balance)
-          t <- create Token with { issuer = issuer, owner = buyer, id = id }
-          p <- create this with { balance = (this.balance -1), tokens = t :: tokens }
-          return (p, t, (issuer, id ))
+          let id = 100 - this.balance
+          tid <- create Token with { issuer = issuer, owner = buyer, id = id, artworkKey= artworkKey }
+          p <- create this with { balance = (this.balance -1), tokens = tid :: tokens }
+          (tid, t) <- fetchByKey @Token (issuer, id, artworkKey)
+          return (p, t)
     
 
  -- tradeable token representing a fraction of an artwork in custody 
@@ -33,22 +34,23 @@ template Token
   with
     issuer: Party
     owner: Party
-    id: (Text,Int)
+    id: Int
+    artworkKey: ArtworkKey
   where
     signatory issuer
     observer owner
 
-    key (issuer, id) : ArtworkTokenKey
+    key (issuer, id, artworkKey) : ArtworkTokenKey
     maintainer key._1
     
-    choice Sell : ArtworkTokenKey
+    choice TransferTo : ArtworkTokenKey
       with
-        buyer: Party
+        receiver: Party
       controller owner
         do
-          assert (buyer /= owner)
-          create this with owner=buyer
-          return (issuer,id)
+          assert (receiver /= owner)
+          create this with owner=receiver
+          return (issuer, id, artworkKey)
 
 
 

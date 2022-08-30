@@ -25,9 +25,10 @@ Create a marketplace to which artworks can be taken into custody in atraceable w
 1. look at multi-party signing
 1. is there better way to have default values or private constructors
 
-## Incomplete Business Imple
+## Incomplete Business Implementation
 1. block the underlying from changing state once it's been tokenise.
 1. implement some form of fees to finance the custody process.
+1. wallet has no protection around putting the same token twice
 
 
 ## Notes

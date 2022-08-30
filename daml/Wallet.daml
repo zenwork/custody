@@ -1,5 +1,6 @@
 module Wallet where
 
+import Fractional
 import Shared
 
 type WalletId = ContractId Wallet
@@ -7,17 +8,22 @@ type WalletId = ContractId Wallet
 template Wallet 
   with
     owner : Party
+    id: Text
     tokens :[ ArtworkTokenKey ]
     crypto: Int
   where
     signatory owner
+
+    key (owner, id) : WalletKey
+    maintainer key._1
+
     choice Put : WalletId
       with 
-        token: ArtworkTokenKey
+        token: Token
       controller owner
         do
-          -- assert (token._1 == owner)
-          create this with {tokens = token :: tokens}
+          let tokenKey = (token.owner, token.id, token.artworkKey)
+          create this with {tokens = tokenKey :: tokens}
 
     choice Remove : WalletId
       with
@@ -25,20 +31,28 @@ template Wallet
       controller owner
         do
           create this with {tokens = filter (/=token) tokens}
-    
-    choice Transfer : (WalletId, WalletId)
-      with
-        token: ArtworkTokenKey
-        reciever: Wallet
-        payment: Int
-      controller owner
-        do
-          assert ( token `elem` tokens )
-          assert ( payment > 0)
-          w <- create this with {tokens = filter (/=token) tokens, crypto = crypto + payment }  
-          r <- create reciever with {tokens = token :: tokens} 
-          return (w,r)
 
 walletFor : (Party) -> Wallet
 walletFor(p) = Wallet with 
-{owner=p, tokens=[], crypto=10}
+{owner=p, tokens=[], crypto=10, id="abc-123"}
+
+template WalletTransfer
+  with
+    senderParty: Party
+    senderWallet: WalletKey 
+    counterparty: Party
+    token: ArtworkTokenKey
+    amount: Int
+  where
+    signatory senderParty
+
+    choice AcceptTransfer : (WalletId, WalletId)
+      with      
+        controller counterparty
+        do
+          (wid, w) <- fetchByKey @Wallet (senderParty, "abc-123")
+          (rid, r) <- fetchByKey @Wallet (counterparty, "abc-123")
+          s <- create w with {tokens = filter (/=token) w.tokens, crypto = w.crypto + amount }  
+          r <- create r with {tokens = token :: r.tokens,  crypto = r.crypto - amount} 
+          return (s,r)
+          

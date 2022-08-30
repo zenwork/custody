@@ -1,4 +1,5 @@
 module Shared where
 
-type ArtworkKey = (Party,Text)
-type ArtworkTokenKey = (Party,(Text,Int))
+type ArtworkKey = (Party, Text)
+type ArtworkTokenKey = (Party, Int, ArtworkKey)
+type WalletKey = (Party, Text)

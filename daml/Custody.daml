@@ -79,7 +79,7 @@ template Artwork
         do 
           assert (not isFractionlised && state == "in custody" && authentic == Some(True))
           create this with isFractionlised = True
-          create TokenPool with {artwork=(owner, title), issuer=holder, balance=100, tokens=[]}
+          create TokenPool with {artworkKey=(owner, title), issuer=holder, balance=100, tokens=[]}
 
 artworkFor : (Party, Text) -> Artwork
 artworkFor(p, t) = Artwork with
