@@ -81,8 +81,8 @@ template Artwork
           create this with isFractionlised = True
           create TokenPool with {artwork=(owner, title), issuer=holder, balance=100, tokens=[]}
 
-newArtwork : (Party, Text) -> Artwork
-newArtwork(p, t) = Artwork with
+artworkFor : (Party, Text) -> Artwork
+artworkFor(p, t) = Artwork with
 {owner = p, title = t, holder = p, state = "in colleciton", authentic = None, inspector = None, isFractionlised=False }
 
 

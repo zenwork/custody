@@ -10,22 +10,24 @@ Digitalization of artworks comes with a few particular problems.
 * The above issues traditionally exposes the investor to an investment diversification problem.
 
 ## Proposed Solution
-Create a marketplace to which artworks can be taken into custody in atraceable way, and then traded as easy to invest token (ie: derivative). Combine the business partners (shipping, storage, art experts, custodian) into a chain of custody to protect owners and investors. 
+Create a marketplace to which artworks can be taken into custody in atraceable way, and then traded as easy to invest token (ie: derivative). Combine the business partners (shipping, storage, art experts, custodian) into a chain of custody to protect owners and investors who thentrade tokens representing a fraction of the artwork. 
 
 ## Questions
-1. how to pass a ref to a contract instance rather than record
-1. token references pool at point in the past
+1. Is it possible to pass a ref/pointer to the latest contract record rather than instance of a record or an id/key?
 
-## Tasks
-1. add wallet
+## TO DO
+1. fix wallet bugs
 1. figure out how to use keys
 1. figure out the issue with asserts
 1. look at writing proper tests
 1. run with inspector
-1. introduce currency
 1. clean up code
 1. look at multi-party signing
 1. is there better way to have default values or private constructors
+
+## Incomplete Business Imple
+1. block the underlying from changing state once it's been tokenise.
+1. implement some form of fees to finance the custody process.
 
 
 ## Notes

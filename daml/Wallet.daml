@@ -1,0 +1,44 @@
+module Wallet where
+
+import Shared
+
+type WalletId = ContractId Wallet
+
+template Wallet 
+  with
+    owner : Party
+    tokens :[ ArtworkTokenKey ]
+    crypto: Int
+  where
+    signatory owner
+    choice Put : WalletId
+      with 
+        token: ArtworkTokenKey
+      controller owner
+        do
+          -- assert (token._1 == owner)
+          create this with {tokens = token :: tokens}
+
+    choice Remove : WalletId
+      with
+        token: ArtworkTokenKey
+      controller owner
+        do
+          create this with {tokens = filter (/=token) tokens}
+    
+    choice Transfer : (WalletId, WalletId)
+      with
+        token: ArtworkTokenKey
+        reciever: Wallet
+        payment: Int
+      controller owner
+        do
+          assert ( token `elem` tokens )
+          assert ( payment > 0)
+          w <- create this with {tokens = filter (/=token) tokens, crypto = crypto + payment }  
+          r <- create reciever with {tokens = token :: tokens} 
+          return (w,r)
+
+walletFor : (Party) -> Wallet
+walletFor(p) = Wallet with 
+{owner=p, tokens=[], crypto=10}

@@ -3,6 +3,7 @@ module Main where
 import Daml.Script
 import Custody
 import Fractional
+import Wallet
 
 
 -- TEST 1
@@ -16,8 +17,13 @@ e2e_test_1 = do
   inspector <- allocateParty "Professor Smith"
   buyer <- allocateParty "Ian Investor"
 
+  -- wallets
+  wallet1 <- submit buyer do createCmd (walletFor (buyer)) 
+  wallet2 <- submit carlos do createCmd (walletFor (carlos)) 
+  wallet3 <- submit inspector do createCmd (walletFor (inspector)) 
+
   -- create artwork
-  picasso <- submit carlos do createCmd (newArtwork (carlos, "Les Femmes d'Alger"))
+  picasso <- submit carlos do createCmd (artworkFor (carlos, "Les Femmes d'Alger"))
 
   -- bring artwork into custody
   picasso <- submit carlos do exerciseCmd picasso ReleaseToShipper with shipper = acme
@@ -29,12 +35,18 @@ e2e_test_1 = do
   -- tokenize artwork
   pool <- submit custodian do exerciseCmd picasso Tokenise
 
-  (pool, token1) <- submit custodian do exerciseCmd pool MintToken with {buyer=buyer}
-  (pool, token2)  <- submit custodian do exerciseCmd pool MintToken with {buyer=carlos}
-  (pool, token3)  <- submit custodian do exerciseCmd pool MintToken with {buyer=inspector}
+  (pool, token1, tokenId1) <- submit custodian do exerciseCmd pool MintToken with {buyer = buyer}
+  wallet1 <- submit buyer do exerciseCmd wallet1 Put with {token = tokenId1}
 
+  (pool, token2, tokenId2)  <- submit custodian do exerciseCmd pool MintToken with {buyer = carlos}
+  wallet2 <- submit carlos do exerciseCmd wallet2 Put with {token = tokenId2}
+
+  (pool, token3, tokenId3)  <- submit custodian do exerciseCmd pool MintToken with {buyer = inspector}
+  wallet3 <- submit inspector do exerciseCmd wallet3 Put with {token = tokenId3}
+  
+  
   -- marketplace transactions
-  submit carlos do exerciseCmd token2 Sell {buyer=buyer}
-  submit inspector do exerciseCmd token3 Sell {buyer=buyer}
+  -- wallet2 <-  submit carlos do exerciseCmd wallet2 Transfer {token=token2, reciever=wallet3, payment=2}
+  -- submit inspector do exerciseCmd token3 Sell {buyer=buyer}
 
   return pool

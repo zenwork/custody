@@ -16,15 +16,16 @@ template TokenPool
     signatory issuer 
     ensure
       balance > 0
-    choice MintToken : (TokenPoolId,TokenId)
+    choice MintToken : (TokenPoolId, TokenId, ArtworkTokenKey)
       with
         buyer: Party
       controller issuer
         do
           assert (balance - 1 > -1)
-          t <- create Token with { issuer = issuer, owner = buyer, id = (artwork._2, 100 - this.balance) }
+          let id =(artwork._2, 100 - this.balance)
+          t <- create Token with { issuer = issuer, owner = buyer, id = id }
           p <- create this with { balance = (this.balance -1), tokens = t :: tokens }
-          return (p,t)
+          return (p, t, (issuer, id ))
     
 
  -- tradeable token representing a fraction of an artwork in custody 
@@ -36,13 +37,18 @@ template Token
   where
     signatory issuer
     observer owner
-    choice Sell : TokenId
+
+    key (issuer, id) : ArtworkTokenKey
+    maintainer key._1
+    
+    choice Sell : ArtworkTokenKey
       with
         buyer: Party
       controller owner
         do
           assert (buyer /= owner)
           create this with owner=buyer
+          return (issuer,id)
 
 
 
