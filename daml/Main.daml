@@ -1,13 +1,13 @@
 module Main where
 
 import Daml.Script
-import Custody
+import Artwork
 import Fractional
 import Wallet
 
 
 -- TEST 1
-e2e_test_1 : Script (TokenPoolId)
+e2e_test_1 : Script ()
 e2e_test_1 = do
   -- parties
   carlos <-  allocateParty "Carlos the Collector"
@@ -35,6 +35,7 @@ e2e_test_1 = do
   -- tokenize artwork
   pool <- submit custodian do exerciseCmd picasso Tokenise
 
+  -- mint tokens
   (pool, token1) <- submit custodian do exerciseCmd pool MintToken with {buyer = ian}
   ianWallet <- submit ian do exerciseCmd ianWallet Put with {token = token1}
 
@@ -44,10 +45,9 @@ e2e_test_1 = do
   (pool, token3)  <- submit custodian do exerciseCmd pool MintToken with {buyer = inspector}
   inspectorWallet <- submit inspector do exerciseCmd inspectorWallet Put with {token = token3}
   
-  
   -- marketplace transactions
-  trx <-  submit carlos do createCmd WalletTransfer {senderParty = carlos, senderWallet = (carlos, "abc-123"), counterparty = ian, token = (token2.issuer, token2.id, token2.artworkKey), amount = 10}
-  
+  trx <-  submit carlos do createCmd WalletTransfer {senderParty = carlos, senderWallet = (carlos, "abc-123"), counterparty = ian, token = (token2.issuer, token2.id, token2.artworkKey), amount = 10}  
+  -- TODO: AccceptTransfer choice does not work :-(
   -- trx <- submit inspector do exerciseCmd trx AcceptTransfer
 
-  return pool
+  return ()

@@ -1,4 +1,4 @@
-module Custody where
+module Artwork where
 
 import Shared
 import Fractional

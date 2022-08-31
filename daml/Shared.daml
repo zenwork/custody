@@ -1,5 +1,7 @@
 module Shared where
 
+-- shared dependencies to avoid circular import problems
+
 type ArtworkKey = (Party, Text)
 type ArtworkTokenKey = (Party, Int, ArtworkKey)
 type WalletKey = (Party, Text)

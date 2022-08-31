@@ -10,12 +10,15 @@ template Wallet
     owner : Party
     id: Text
     tokens :[ ArtworkTokenKey ]
-    crypto: Int
+    balance: Int
   where
     signatory owner
 
     key (owner, id) : WalletKey
     maintainer key._1
+
+    agreement
+      "simplistic implementation of a wallet to hold on to a partie's tokens and currency balance"
 
     choice Put : WalletId
       with 
@@ -34,7 +37,7 @@ template Wallet
 
 walletFor : (Party) -> Wallet
 walletFor(p) = Wallet with 
-{owner=p, tokens=[], crypto=10, id="abc-123"}
+{owner=p, tokens=[], balance=10, id="abc-123"}
 
 template WalletTransfer
   with
@@ -46,13 +49,16 @@ template WalletTransfer
   where
     signatory senderParty
 
+    agreement
+      "short lived contract to process a wallet to wallet transfer"
+
     choice AcceptTransfer : (WalletId, WalletId)
       with      
         controller counterparty
         do
           (wid, w) <- fetchByKey @Wallet (senderParty, "abc-123")
           (rid, r) <- fetchByKey @Wallet (counterparty, "abc-123")
-          s <- create w with {tokens = filter (/=token) w.tokens, crypto = w.crypto + amount }  
-          r <- create r with {tokens = token :: r.tokens,  crypto = r.crypto - amount} 
+          s <- create w with {tokens = filter (/=token) w.tokens, balance = w.balance + amount }  
+          r <- create r with {tokens = token :: r.tokens,  balance = r.balance - amount} 
           return (s,r)
           
