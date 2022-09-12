@@ -32,3 +32,5 @@ Create a marketplace in which artworks can be taken into custody in atraceable w
 1. Had to move `ensure` from construction to creation choice time. Seems like I am weakening the model. Is there a different way?
 1. is there better way to have default values or private constructors?
 1. Is it possible to pass a ref/pointer to the latest contract record rather than instance of a record or an id/key?
+1. `Artwork.daml`: Research how to implement state machine?
+1. `Artwork.daml`: Use stricter way than strings to define states (enums, constants, other tmeplate maybe)
