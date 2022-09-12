@@ -9,7 +9,7 @@ template Wallet
   with
     owner : Party
     id: Text
-    tokens :[ ArtworkTokenKey ]
+    tokenKeys :[ ArtworkTokenKey ]
     balance: Int
   where
     signatory owner
@@ -26,39 +26,80 @@ template Wallet
       controller owner
         do
           let tokenKey = (token.owner, token.id, token.artworkKey)
-          create this with {tokens = tokenKey :: tokens}
+          create this with {tokenKeys = tokenKey :: tokenKeys}
 
     choice Remove : WalletId
       with
-        token: ArtworkTokenKey
+        tokenKey: ArtworkTokenKey
       controller owner
         do
-          create this with {tokens = filter (/=token) tokens}
+          -- not sure why i have to compare key props separately
+          create this with {tokenKeys = filter (\(t) -> (t._1 /= tokenKey._1 && t._2 /= tokenKey._2 && t._3 /= tokenKey._3)) tokenKeys}
+
+    choice Deposit : WalletId
+      with
+        amount: Int
+      controller owner
+        do
+          create this with {balance = balance + amount} 
+
+    choice Debit : WalletId
+      with
+        amount: Int
+      controller owner
+        do
+          create this with {balance = balance - amount} 
 
 walletFor : (Party) -> Wallet
 walletFor(p) = Wallet with 
-{owner=p, tokens=[], balance=10, id="abc-123"}
+{owner=p, tokenKeys=[], balance=20, id="abc-123"}
 
 template WalletTransfer
   with
-    senderParty: Party
-    senderWallet: WalletKey 
-    counterparty: Party
-    token: ArtworkTokenKey
-    amount: Int
+    giver: Party
+    taker: Party
+    tokenKey: ArtworkTokenKey
+    amountDue: Int
+    tokenHold: Optional(ArtworkTokenKey)
+    amountTransfered: Optional(Int)
   where
-    signatory senderParty
+    signatory giver
+    observer taker
 
     agreement
       "short lived contract to process a wallet to wallet transfer"
 
-    choice AcceptTransfer : (WalletId, WalletId)
+    choice GiveToken : ContractId WalletTransfer
       with      
-        controller counterparty
+        controller giver
         do
-          (wid, w) <- fetchByKey @Wallet (senderParty, "abc-123")
-          (rid, r) <- fetchByKey @Wallet (counterparty, "abc-123")
-          s <- create w with {tokens = filter (/=token) w.tokens, balance = w.balance + amount }  
-          r <- create r with {tokens = token :: r.tokens,  balance = r.balance - amount} 
-          return (s,r)
-          
+          exerciseByKey @Wallet (giver, "abc-123") Remove with tokenKey = tokenKey
+          exerciseByKey @Token tokenKey TransferTo with receiver=taker
+          create this with { tokenHold = Some tokenKey}
+
+    choice TakeToken : ContractId WalletTransfer
+          with      
+            controller taker
+            do
+              (id, t) <- fetchByKey @Token tokenKey
+              exerciseByKey @Wallet (taker, "abc-123") Put with token = t
+              exerciseByKey @Wallet (taker, "abc-123") Debit with amount = amountDue
+              create this with { amountTransfered = Some amountDue, tokenHold = None}
+
+    choice GetPayment : ContractId WalletTransfer
+      with      
+        controller giver
+        do
+          exerciseByKey @Wallet (giver, "abc-123") Deposit with amount = amountDue
+          create this with { amountTransfered = None }
+
+transfer : (Party, Party, Token, Int) -> WalletTransfer
+transfer(p1,p2,t,d) = WalletTransfer with
+{
+  giver = p1, 
+  taker = p2,   
+  tokenKey = (t.issuer, t.id, t.artworkKey), 
+  amountDue = d, 
+  amountTransfered = None, 
+  tokenHold = None
+}

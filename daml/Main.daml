@@ -9,6 +9,7 @@ import Wallet
 -- TEST 1
 e2e_test_1 : Script ()
 e2e_test_1 = do
+
   -- parties
   carlos <-  allocateParty "Carlos the Collector"
   acme <- allocateParty "Acme Shipping"
@@ -46,8 +47,14 @@ e2e_test_1 = do
   inspectorWallet <- submit inspector do exerciseCmd inspectorWallet Put with {token = token3}
   
   -- marketplace transactions
-  trx <-  submit carlos do createCmd WalletTransfer {senderParty = carlos, senderWallet = (carlos, "abc-123"), counterparty = ian, token = (token2.issuer, token2.id, token2.artworkKey), amount = 10}  
-  -- TODO: AccceptTransfer choice does not work :-(
-  -- trx <- submit inspector do exerciseCmd trx AcceptTransfer
+  trx <- submit carlos do createCmd (transfer (carlos, ian, token2,10))  
+  trx <- submit carlos do exerciseCmd trx GiveToken
+  trx <- submit ian do exerciseCmd trx TakeToken
+  trx <- submit carlos do exerciseCmd trx GetPayment
+
+  trx <- submit inspector do createCmd (transfer (inspector, ian, token3, 10))  
+  trx <- submit inspector do exerciseCmd trx GiveToken
+  trx <- submit ian do exerciseCmd trx TakeToken
+  trx <- submit inspector do exerciseCmd trx GetPayment
 
   return ()

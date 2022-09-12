@@ -19,7 +19,6 @@ Create a marketplace in which artworks can be taken into custody in atraceable w
 # Implementation Notes
 
 ## TO DO
-1. fix wallet bugs
 1. add proper unit tests
 1. make code deployable
 
@@ -34,3 +33,4 @@ Create a marketplace in which artworks can be taken into custody in atraceable w
 1. Is it possible to pass a ref/pointer to the latest contract record rather than instance of a record or an id/key?
 1. `Artwork.daml`: Research how to implement state machine?
 1. `Artwork.daml`: Use stricter way than strings to define states (enums, constants, other tmeplate maybe)
+1. Fixed wallet issue in unsatisfactory way. It takes 4 calls to execute the transfer which results in too many updates to the wallets to make an audit of what occured clear.
